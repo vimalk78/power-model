@@ -1,0 +1,57 @@
+import requests
+import time
+
+prometheus_url = 'http://localhost:9090'  # Replace with your Prometheus server URL
+metric_bpf_cpu_time = 'kepler_process_bpf_cpu_time_ms_total'
+
+
+def fetch_prometheus_metrics(url, metric_name):
+    """
+    Fetch a specific metric from a Prometheus server.
+
+    Args:
+    url (str): The URL of the Prometheus server's metrics endpoint.
+    metric_name (str): The name of the metric to query.
+
+    Returns:
+    str: The raw metrics data for the specified metric.
+    """
+    response = requests.get(f"{url}/api/v1/query", params={'query': metric_name})
+    response.raise_for_status()  # Raise an error for bad status codes
+    data = response.json()
+    if data['status'] == 'success':
+        return data['data']['result']
+    else:
+        return f"Error fetching metric: {data['error']}"
+
+
+def test():
+    metrics = fetch_prometheus_metrics(prometheus_url, metric_bpf_cpu_time)  # Replace 'up' with your specific metric name
+    print(metrics)
+
+
+def read_cpu_power_from_rapl():
+    """
+    Reads the CPU domain power from RAPL (Running Average Power Limit).
+
+    Returns:
+    str: The CPU power consumption data.
+    """
+    try:
+        with open('/sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj', 'r') as file:
+            power_data = file.read().strip()
+        return str(float(power_data) / 10**6)
+    except FileNotFoundError:
+        return "RAPL interface not found."
+    except Exception as e:
+        return f"Error reading RAPL data: {e}"
+
+
+
+if __name__ == "__main__":
+    while True:
+        cpu_power = read_cpu_power_from_rapl()
+        print(f"CPU Power from RAPL: {cpu_power}")
+        metrics = fetch_prometheus_metrics(prometheus_url, metric_bpf_cpu_time)  # Replace 'up' with your specific metric name
+        print(metrics)
+        time.sleep(1)  # Sleep for 1 second before reading the value again
