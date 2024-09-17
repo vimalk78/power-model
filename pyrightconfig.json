@@ -1,0 +1,7 @@
+{
+  "venvPath": ".",
+  "venv": ".power-train/",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+}
+

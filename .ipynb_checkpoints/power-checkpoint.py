@@ -28,12 +28,9 @@ METRIC_NODE_RAPL_PKG_JOULES_TOTAL = "node_rapl_package_joules_total"
 QUERY_NODE_RAPL_PKG_JOULES_TOTAL = "rate(node_rapl_package_joules_total{}[{}])"
 LABEL_RAPL_PATH = "/host/sys/class/powercap/intel-rapl:0"
 
-METRIC_PKG_JOULES_TOTAL = "kepler_process_package_joules_total"
-QUERY_KEPLER_PKG_JOULES_TOTAL = "rate(kepler_process_package_joules_total{}[{}])"
-
 METRIC_UP = "up"
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 
 # Load the California Housing dataset and train the model
 def train_lr(data):
@@ -81,7 +78,7 @@ def test_california_housing():
     return model
 
 
-def fetch_prometheus_data(start_time, end_time, query, rename_value_column, columns=[], label_config: dict = None):
+def fetch_prometheus_data(start_time, end_time, query, df, rename_value_column, columns=[], label_config: dict = None):
     try:
         # Connect to Prometheus
         prom = PrometheusConnect(url=PROM_URL, disable_ssl=True)
@@ -129,6 +126,8 @@ def printDF(df: pd.DataFrame):
 
 
 def test_kepler_power_model(end_time, duration):
+    # Create an empty DataFrame
+    df = pd.DataFrame()
     start_time = end_time - timedelta(milliseconds=duration)
 
     # Call fetch_and_add_prometheus_data for each metric
@@ -136,8 +135,9 @@ def test_kepler_power_model(end_time, duration):
         start_time=start_time,
         end_time=end_time,
         query=QUERY_BPF_CPU_TIME,
+        df=df,
         rename_value_column='bpf_cpu_time',
-        # label_config={"command": ".*stress.*"},
+        label_config={"command": ".*stress.*"},
         columns=COLUMNS_COMMAND_PID)
     bpf_df.attrs = {"name": "bpf_df"}
     bpf_cpu_time_total = bpf_df['bpf_cpu_time'].sum()
@@ -148,6 +148,7 @@ def test_kepler_power_model(end_time, duration):
         start_time=start_time,
         end_time=end_time,
         query=QUERY_NODE_RAPL_PKG_JOULES_TOTAL,
+        df=df,
         rename_value_column='pkg_joules',
         label_config={"path": LABEL_RAPL_PATH})
     pkg_joules_df.attrs = {"name": "pkg_joules_df"}
@@ -157,12 +158,17 @@ def test_kepler_power_model(end_time, duration):
         start_time=start_time,
         end_time=end_time,
         query=QUERY_CPU_INSTRUCTIONS,
+        df=df,
         rename_value_column='cpu_instructions',
-        # label_config={"command": ".*stress.*"},
+        label_config={"command": ".*stress.*"},
         columns=COLUMNS_COMMAND_PID)
     cpu_inst_df.attrs = {"name": "cpu_inst_df"}
     printDF(cpu_inst_df)
 
+    # Display the DataFrame
+    # print(df)
+
+    return df
 
 
 def test_main():
