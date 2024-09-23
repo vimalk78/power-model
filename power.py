@@ -10,6 +10,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.utils import Bunch
+from sklearn.metrics import mean_absolute_percentage_error
+
 
 PROM_URL = "http://localhost:9090"
 
@@ -56,9 +58,11 @@ def train_lr(data):
     # Evaluate the model
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
+    mape = mean_absolute_percentage_error(y_test, y_pred)
 
     print(f"Mean Squared Error: {mse}")
     print(f"R^2 Score: {r2}")
+    print(f"MAPE: {mape}")
 
     # Display the coefficients of the model
     print("Coefficients:")
